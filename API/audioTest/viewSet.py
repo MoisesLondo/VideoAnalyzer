@@ -11,16 +11,25 @@ from langchain_ollama import OllamaLLM
 @api_view(['POST'])
 def videoText(request):
     video_file = request.FILES['video']
-    
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp_audio:
-        video = mp.VideoFileClip(video_file.temporary_file_path())
-        video.audio.write_audiofile(temp_audio.name)
-        video.close()
-        transcription = whisper_test(temp_audio.name)
-        result = chat(f'Dame 3 ideas de titulos para la siguiente descripción: {transcription}. No me des introducción, solo las ideas')
-        resumen = chat(f'Hazme un resumen para la siguiente descripción: {transcription}. No me des introducción, solo el resumen')
-    os.unlink(temp_audio.name)
-    
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as temp_file:
+        temp_file_path = temp_file.name
+
+        with open(temp_file_path, 'wb') as f:
+            for chunk in video_file.chunks():
+                f.write(chunk)
+
+    with mp.VideoFileClip(temp_file_path) as video:
+        audio_path = f'{temp_file_path}.wav'
+        video.audio.write_audiofile(audio_path)
+
+    transcription = whisper_test(audio_path)
+    result = chat(f'Dame 3 ideas de titulos para la siguiente descripción: {transcription}. No me des introducción, solo las ideas')
+    resumen = chat(f'Hazme un resumen para la siguiente descripción: {transcription}. No me des introducción, solo el resumen')
+
+    os.unlink(temp_file_path)
+    os.unlink(audio_path)
+
     return JsonResponse({'text': transcription, 'ideas': result, 'resumen': resumen}, status=status.HTTP_200_OK)
 
 def whisper_test(audio_path):
