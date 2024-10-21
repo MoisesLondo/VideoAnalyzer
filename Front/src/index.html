@@ -1,0 +1,78 @@
+<!doctype html>
+<html data-theme="retro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="./output.css" rel="stylesheet">
+  <link rel="stylesheet" href="./input.css">
+</head>
+<body>
+    <div class="min-h-screen bg-base-100 flex flex-col items-center justify-start">
+        <div class="navbar bg-primary w-full" >
+            <a class="btn btn-ghost text-xl">TITLE IDEAS</a>
+        </div>
+        <div class="container mx-auto px-4 py-8 flex flex-col items-center">
+            <h1 class="text-3xl font-bold underline">
+                SUBE TU VIDEO
+            </h1>
+            <form class="w-full max-w-xs flex flex-col items-center gap-4" method="post" enctype="multipart/form-data">
+                <div class="form-control w-full">
+                    <label for="video">VIDEO</label>
+                    <input name="video" type="file" class="file-input file-input-bordered file-input-secondary w-full" accept="video/*" />
+                </div>
+
+                <button id="submitBtn" class="btn btn-primary">Button</button>
+                <span class="loading loading-spinner loading-lg" id="loaderSpan" style="display: none;"></span>
+                <div id="resultDiv" class="mt-4 p-6 border rounded-lg bg-base-200 shadow-lg w-full max-w-md" style="display: none;"></div>
+            </form>
+        </div>
+    </div>
+</body>
+<script>
+    document.getElementById('submitBtn').addEventListener('click', async function(event) {
+        event.preventDefault(); 
+        
+        const formData = new FormData();
+        const fileInput = document.querySelector('input[type="file"]');
+        
+        if (fileInput.files.length === 0) {
+            alert("Por favor, seleccione un video antes de enviar.");
+            return;
+        }
+        
+        formData.append('video', fileInput.files[0]);
+        
+        try {
+            const resultDiv = document.getElementById('resultDiv');
+            const loaderSpan = document.getElementById('loaderSpan');
+            loaderSpan.style.display = 'inline-block';
+            resultDiv.style.display = 'none';
+            const response = await fetch('http://localhost:8000/videoText/', {
+                method: 'POST',
+                body: formData,
+            });
+            
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            
+            const data = await response.json();
+            console.log(data);
+            resultDiv.innerHTML = `
+            <h2 class="text-3xl font-bold">Result:</h2>
+            <p class="font-bold">${data.text}</p>
+            <h2 class="text-3xl font-bold">Ideas:</h2>
+            <p class="font-bold">${data.ideas}</p>
+            <h2 class="text-3xl font-bold">Resumen:</h2>
+            <p class="font-bold">${data.resumen}</p>
+            
+        `;
+            loaderSpan.style.display = 'none';
+            resultDiv.style.display = 'block';
+            
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    });
+    </script>
+</html>
