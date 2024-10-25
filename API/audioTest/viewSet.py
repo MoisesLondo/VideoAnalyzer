@@ -6,31 +6,70 @@ from django.http import JsonResponse
 import moviepy.editor as mp
 import whisper
 from langchain_ollama import OllamaLLM
+from textblob import TextBlob
+from langdetect import detect
 
+nltk.download('punkt')
+nltk.download('stopwords')
 
 @api_view(['POST'])
 def videoText(request):
-    video_file = request.FILES['video']
+    try:
+        video_file = request.FILES.get('file')
+        if not video_file:
+            return JsonResponse({'error': 'No se proporcionó ningún archivo'}, status=status.HTTP_400_BAD_REQUEST)
 
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as temp_file:
-        temp_file_path = temp_file.name
+        # Validar tipo de archivo
+        if not video_file.name.lower().endswith(('.mp4', '.avi', '.mov', '.mkv')):
+            return JsonResponse({'error': 'Tipo de archivo inválido'}, status=status.HTTP_400_BAD_REQUEST)
 
-        with open(temp_file_path, 'wb') as f:
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as temp_file:
+            temp_file_path = temp_file.name
             for chunk in video_file.chunks():
-                f.write(chunk)
+                temp_file.write(chunk)
 
-    with mp.VideoFileClip(temp_file_path) as video:
-        audio_path = f'{temp_file_path}.wav'
-        video.audio.write_audiofile(audio_path)
+        with mp.VideoFileClip(temp_file_path) as video:
+            # Extraer metadatos del video
+            duracion = video.duration
+            fps = video.fps
+            tamano = video.size
 
-    transcription = whisper_test(audio_path)
-    result = chat(f'Dame 3 ideas de titulos para la siguiente descripción: {transcription}. No me des introducción, solo las ideas')
-    resumen = chat(f'Hazme un resumen para la siguiente descripción: {transcription}. No me des introducción, solo el resumen')
+            audio_path = f'{temp_file_path}.wav'
+            video.audio.write_audiofile(audio_path)
 
-    os.unlink(temp_file_path)
-    os.unlink(audio_path)
 
-    return JsonResponse({'text': transcription, 'ideas': result, 'resumen': resumen}, status=status.HTTP_200_OK)
+        transcripcion = whisper_test(audio_path)
+        ideas_titulo = chat(f'Dame 3 ideas de títulos para la siguiente descripción: {transcripcion}. No me des introducción, solo las ideas')
+        resumen = chat(f'Hazme un resumen para la siguiente transcripción: {transcripcion}. No me des introducción, solo el resumen')
+
+        # Análisis de sentimiento
+        sentimiento = TextBlob(transcripcion).sentiment.polarity
+
+        # Detección de idioma
+        idioma = detect(transcripcion)
+
+        # Generar capítulos del video
+        capitulos = chat(f'Genera 5 títulos de capítulos con marcas de tiempo para un video basado en esta transcripción: {transcripcion}. Formatea como "MM:SS - Título del Capítulo".')
+
+        os.unlink(temp_file_path)
+        os.unlink(audio_path)
+
+        return JsonResponse({
+            'text': transcripcion,
+            'ideas': ideas_titulo,
+            'resumen': resumen,
+            'metadatos': {
+                'duracion': duracion,
+                'fps': fps,
+                'tamano': tamano
+            },
+            'sentimiento': sentimiento,
+            'idioma': idioma,
+            'capitulos': capitulos
+        }, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 def whisper_test(audio_path):
     model = whisper.load_model("base")

@@ -13,41 +13,107 @@
         </div>
         <div class="container mx-auto px-4 py-8 flex flex-col items-center">
             <h1 class="text-3xl font-bold underline">
-                SUBE TU VIDEO
+                SUBE TU CONTENIDO
             </h1>
             <form class="w-full max-w-xs flex flex-col items-center gap-4" method="post" enctype="multipart/form-data">
                 <div class="form-control w-full">
-                    <label for="video">VIDEO</label>
-                    <input name="video" type="file" class="file-input file-input-bordered file-input-secondary w-full" accept="video/*" />
+                    <label for="contentType">Tipo de Contenido</label>
+                    <div class="dropdown w-full">
+                        <div tabindex="0" role="button" class="btn m-1 w-full" id="contentTypeBtn">Seleccionar tipo</div>
+                        <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow">
+                            <li><a data-value="link">Link</a></li>
+                            <li><a data-value="video">Video</a></li>
+                            <li><a data-value="pdf">PDF</a></li>
+                        </ul>
+                    </div>
+                    <input type="hidden" name="contentType" id="contentTypeInput" value="">
                 </div>
 
-                <button id="submitBtn" class="btn btn-primary">Button</button>
+                <div id="linkInput" class="form-control w-full" style="display: none;">
+                    <label for="link">Link</label>
+                    <input name="link" type="url" class="input input-bordered w-full" />
+                </div>
+
+                <div id="fileInput" class="form-control w-full" style="display: none;">
+                    <label for="file">Archivo</label>
+                    <input name="file" type="file" class="file-input file-input-bordered file-input-secondary w-full" />
+                </div>
+
+                <button id="submitBtn" class="btn btn-primary">Enviar</button>
                 <span class="loading loading-spinner loading-lg" id="loaderSpan" style="display: none;"></span>
-                <div id="resultDiv" class="mt-4 p-6 border rounded-lg bg-base-200 shadow-lg w-full max-w-md" style="display: none;"></div>
             </form>
+            <div id="resultDiv" class="mt-4 p-6 border rounded-lg bg-base-200 shadow-lg w-full max-w-md" style="display: none;"></div>
         </div>
     </div>
 </body>
 <script>
+    const contentTypeBtn = document.getElementById('contentTypeBtn');
+    const contentTypeInput = document.getElementById('contentTypeInput');
+    const linkInput = document.getElementById('linkInput');
+    const fileInput = document.getElementById('fileInput');
+
+    document.querySelectorAll('.dropdown-content li a').forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            const selectedValue = this.getAttribute('data-value');
+            contentTypeBtn.textContent = this.textContent;
+            contentTypeInput.value = selectedValue;
+
+            if (selectedValue === 'link') {
+                linkInput.style.display = 'block';
+                fileInput.style.display = 'none';
+            } else {
+                linkInput.style.display = 'none';
+                fileInput.style.display = 'block';
+            }
+
+            if (selectedValue === 'video') {
+                fileInput.querySelector('input').accept = 'video/*';
+            } else if (selectedValue === 'pdf') {
+                fileInput.querySelector('input').accept = 'application/pdf';
+            }
+        });
+    });
+
     document.getElementById('submitBtn').addEventListener('click', async function(event) {
         event.preventDefault(); 
         
-        const formData = new FormData();
-        const fileInput = document.querySelector('input[type="file"]');
+        const formData = new FormData(document.querySelector('form'));
+        const contentType = formData.get('contentType');
         
-        if (fileInput.files.length === 0) {
-            alert("Por favor, seleccione un video antes de enviar.");
+        if (!contentType) {
+            alert("Por favor, seleccione un tipo de contenido antes de enviar.");
             return;
         }
-        
-        formData.append('video', fileInput.files[0]);
+
+        if (contentType === 'link' && !formData.get('link')) {
+            alert("Por favor, ingrese un link antes de enviar.");
+            return;
+        } else if (contentType !== 'link' && !formData.get('file')) {
+            alert("Por favor, seleccione un archivo antes de enviar.");
+            return;
+        }
         
         try {
             const resultDiv = document.getElementById('resultDiv');
             const loaderSpan = document.getElementById('loaderSpan');
             loaderSpan.style.display = 'inline-block';
             resultDiv.style.display = 'none';
-            const response = await fetch('http://localhost:8000/videoText/', {
+            
+            let endpoint;
+            switch(contentType) {
+                case 'link':
+                    endpoint = 'http://localhost:8000/linkText/';
+                    break;
+                case 'video':
+                    endpoint = 'http://localhost:8000/videoText/';
+                    break;
+                case 'pdf':
+                    endpoint = 'http://localhost:8000/pdfText/';
+                    break;
+            }
+
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 body: formData,
             });
@@ -58,21 +124,23 @@
             
             const data = await response.json();
             console.log(data);
-            resultDiv.innerHTML = `
-            <h2 class="text-3xl font-bold">Result:</h2>
-            <p class="font-bold">${data.text}</p>
-            <h2 class="text-3xl font-bold">Ideas:</h2>
-            <p class="font-bold">${data.ideas}</p>
-            <h2 class="text-3xl font-bold">Resumen:</h2>
-            <p class="font-bold">${data.resumen}</p>
             
-        `;
+            resultDiv.innerHTML = `
+                <h2 class="text-3xl font-bold">Transcripción:</h2>
+                <p>${data.text}</p>
+                <h2 class="text-3xl font-bold">Ideas:</h2>
+                <p>${data.ideas}</p>
+                <h2 class="text-3xl font-bold">Resumen:</h2>
+                <p>${data.resumen}</p>
+            `;
+            
             loaderSpan.style.display = 'none';
             resultDiv.style.display = 'block';
             
         } catch (error) {
             console.error('Error:', error);
+            resultDiv.innerHTML = `<p class="font-bold text-red-500">${error.message}</p>`;
         }
     });
-    </script>
+</script>
 </html>

@@ -11,6 +11,9 @@ importers:
       '@huggingface/inference':
         specifier: ^2.8.1
         version: 2.8.1
+      Hugging-Face-Test:
+        specifier: 'file:'
+        version: 'file:'
     devDependencies:
       daisyui:
         specifier: ^4.12.13
@@ -73,6 +76,9 @@ packages:
   '@pkgjs/parseargs@0.11.0':
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
     engines: {node: '>=14'}
+
+  'Hugging-Face-Test@file:':
+    resolution: {directory: '', type: directory}
 
   ansi-regex@5.0.1:
     resolution: {integrity: sha512-quJQXlTSUGL2LH9SUXo8VwsY4soanhgo6LNSm84E1LBcE8s3O0wpdiRzyR9z/ZZJMlMWv37qOOb9pdJlMUEKFQ==}
@@ -520,6 +526,10 @@ snapshots:
 
   '@pkgjs/parseargs@0.11.0':
     optional: true
+
+  'Hugging-Face-Test@file:':
+    dependencies:
+      '@huggingface/inference': 2.8.1
 
   ansi-regex@5.0.1: {}
 
