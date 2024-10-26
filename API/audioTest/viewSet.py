@@ -9,6 +9,7 @@ from textblob import TextBlob
 from langdetect import detect
 from groq import Groq
 import yt_dlp
+import PyPDF2
 
 @api_view(['POST'])
 def videoText(request):
@@ -93,6 +94,45 @@ def linkText(request):
             'category': category,
         }, status=status.HTTP_200_OK)
 
+    except Exception as e:
+        print(e)
+        return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+@api_view(['POST'])
+def pdfText(request):
+    try:
+        pdf_file = request.FILES.get('file')
+        if not pdf_file:
+            return JsonResponse({'error': 'No se proporcionó ningún archivo'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not pdf_file.name.lower().endswith('.pdf'):
+            return JsonResponse({'error': 'Tipo de archivo inválido'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_file:
+            temp_file_path = temp_file.name
+            for chunk in pdf_file.chunks():
+                temp_file.write(chunk)
+        
+        pdf = PyPDF2.PdfReader(temp_file_path)
+        text = ''
+        for page in range(len(pdf.pages)):
+            text += pdf.pages[page].extract_text()
+        
+        ideas_titulo = chat(f'Dame 3 ideas de títulos para la siguiente descripción: {text}. No me des introducción, solo las ideas')
+        resumen = chat(f'Hazme un resumen para la siguiente transcripción: {text}. No me des introducción, solo el resumen')
+        idioma = detect(text)
+        
+        os.unlink(temp_file_path)
+        
+        return JsonResponse({
+            'text': text,
+            'ideas': ideas_titulo,
+            'resumen': resumen,
+            'idioma': idioma,
+            'pages': len(pdf.pages)
+
+        }, status=status.HTTP_200_OK)
+    
     except Exception as e:
         print(e)
         return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
