@@ -124,8 +124,8 @@
             
             const data = await response.json();
             console.log(data);
-            
-            resultDiv.innerHTML = `
+            if (contentType === 'video' || contentType === 'pdf') {
+                resultDiv.innerHTML = `
                 <h2 class="text-3xl font-bold">Transcripción:</h2>
                 <p>${data.text}</p>
                 <h2 class="text-3xl font-bold">Ideas:</h2>
@@ -133,6 +133,30 @@
                 <h2 class="text-3xl font-bold">Resumen:</h2>
                 <p>${data.resumen}</p>
             `;
+            }else{
+                resultDiv.innerHTML = `
+                <div class="avatar">
+                    <div class="w-64 rounded">
+                        <img src="${data.thumbnail}" />
+                    </div>
+                </div>
+                <h2 class="text-3xl font-bold">Author:</h2>
+                <p>${data.author}</p>
+                <h2 class="text-3xl font-bold">Title:</h2>
+                <p>${data.title}</p>
+                <h2 class="text-3xl font-bold">Duracion:</h2>
+                <p>${data.length}</p>
+                <h2 class="text-3xl font-bold">Transcripción:</h2>
+                <p>${data.text}</p>
+                <h2 class="text-3xl font-bold">Ideas:</h2>
+                <p>${data.ideas}</p>
+                <h2 class="text-3xl font-bold">Resumen:</h2>
+                <p>${data.resumen}</p>
+                <h2 class="text-3xl font-bold">Categoría:</h2>
+                <p>${data.category}</p>
+            `;
+            }
+            
             
             loaderSpan.style.display = 'none';
             resultDiv.style.display = 'block';
