@@ -10,6 +10,9 @@ from langdetect import detect
 from groq import Groq
 import yt_dlp
 import PyPDF2
+from dotenv import load_dotenv
+
+load_dotenv()
 
 @api_view(['POST'])
 def videoText(request):
@@ -145,7 +148,7 @@ def whisper_test(audio_path):
     return result['text']
 
 def chat(myprompt):
-    key = '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'
+    key = os.getenv('GROQ_KEY')
     client = Groq(api_key=key)
     completion = client.chat.completions.create(
     model="llama3-8b-8192",
