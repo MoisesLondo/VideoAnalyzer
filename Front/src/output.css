@@ -1902,24 +1902,16 @@ html {
   min-height: 100vh;
 }
 
-.w-24 {
-  width: 6rem;
-}
-
 .w-52 {
   width: 13rem;
 }
 
-.w-full {
-  width: 100%;
-}
-
-.w-2 {
-  width: 0.5rem;
-}
-
 .w-64 {
   width: 16rem;
+}
+
+.w-full {
+  width: 100%;
 }
 
 .max-w-md {
@@ -1928,6 +1920,10 @@ html {
 
 .max-w-xs {
   max-width: 20rem;
+}
+
+.max-w-5xl {
+  max-width: 64rem;
 }
 
 .flex-col {

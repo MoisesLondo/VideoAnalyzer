@@ -38,48 +38,78 @@
                     <label for="file">Archivo</label>
                     <input name="file" type="file" class="file-input file-input-bordered file-input-secondary w-full" />
                 </div>
-
+                <div id="themeInput" class="form-control w-full" style="display: none">
+                    <label for="theme">Temática del resumen (Opcional)</label>
+                    <input name="theme" type="text" class="input input-bordered w-full" placeholder="Matemáticas"/>
+                </div>
+                <div class="form-control w-full" id="resumeWeightDiv" style="display: none">
+                    <label for="resumeWeight">Longitud del resumen (Opcional)</label>
+                    <div class="dropdown w-full">
+                        <div tabindex="0" role="button" class="btn m-1 w-full" id="resumeWeightBtn">Seleccionar tipo</div>
+                        <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow">
+                            <li><a data-value="largo">Largo</a></li>
+                            <li><a data-value="medio">Medio</a></li>
+                            <li><a data-value="corto">Corto</a></li>
+                        </ul>
+                    </div>
+                    <input type="hidden" name="resumeWeight" id="resumeWeightInput" value="">
+                </div>
                 <button id="submitBtn" class="btn btn-primary">Enviar</button>
                 <span class="loading loading-spinner loading-lg" id="loaderSpan" style="display: none;"></span>
             </form>
-            <div id="resultDiv" class="mt-4 p-6 border rounded-lg bg-base-200 shadow-lg w-full max-w-md" style="display: none;"></div>
+            <div id="resultDiv" class="mt-4 p-6 border rounded-lg bg-base-200 shadow-lg w-full max-w-5xl" style="display: none;"></div>
         </div>
     </div>
 </body>
 <script>
     const contentTypeBtn = document.getElementById('contentTypeBtn');
     const contentTypeInput = document.getElementById('contentTypeInput');
+    const resumeWeightBtn = document.getElementById('resumeWeightBtn');
+    const resumeWeightInput = document.getElementById('resumeWeightInput');
     const linkInput = document.getElementById('linkInput');
     const fileInput = document.getElementById('fileInput');
+    const themeInput = document.getElementById('themeInput');
+    const resumeWeightDiv = document.getElementById('resumeWeightDiv');
 
-    document.querySelectorAll('.dropdown-content li a').forEach(item => {
-        item.addEventListener('click', function(e) {
-            e.preventDefault();
-            const selectedValue = this.getAttribute('data-value');
-            contentTypeBtn.textContent = this.textContent;
-            contentTypeInput.value = selectedValue;
+    function setupDropdown(btnElement, inputElement, items) {
+        items.forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const selectedValue = this.getAttribute('data-value');
+                btnElement.textContent = this.textContent;
+                inputElement.value = selectedValue;
 
-            if (selectedValue === 'link') {
-                linkInput.style.display = 'block';
-                fileInput.style.display = 'none';
-            } else {
-                linkInput.style.display = 'none';
-                fileInput.style.display = 'block';
-            }
+                if (btnElement === contentTypeBtn) {
+                    if (selectedValue === 'link') {
+                        linkInput.style.display = 'block';
+                        fileInput.style.display = 'none';
 
-            if (selectedValue === 'video') {
-                fileInput.querySelector('input').accept = 'video/*';
-            } else if (selectedValue === 'pdf') {
-                fileInput.querySelector('input').accept = 'application/pdf';
-            }
+                    } else {
+                        linkInput.style.display = 'none';
+                        fileInput.style.display = 'block';
+                    }
+                    themeInput.style.display = 'block';
+                    resumeWeightDiv.style.display = 'block';
+
+                    if (selectedValue === 'video') {
+                        fileInput.querySelector('input').accept = 'video/*';
+                    } else if (selectedValue === 'pdf') {
+                        fileInput.querySelector('input').accept = 'application/pdf';
+                    }
+                }
+            });
         });
-    });
+    }
+
+    setupDropdown(contentTypeBtn, contentTypeInput, document.querySelectorAll('#contentTypeBtn + .dropdown-content a'));
+    setupDropdown(resumeWeightBtn, resumeWeightInput, document.querySelectorAll('#resumeWeightBtn + .dropdown-content a'));
 
     document.getElementById('submitBtn').addEventListener('click', async function(event) {
         event.preventDefault(); 
         
         const formData = new FormData(document.querySelector('form'));
         const contentType = formData.get('contentType');
+        const resumeWeight = formData.get('resumeWeight');
         
         if (!contentType) {
             alert("Por favor, seleccione un tipo de contenido antes de enviar.");
@@ -123,7 +153,12 @@
             }
             
             const data = await response.json();
-            console.log(data);
+            if (data.idioma === 'en') {
+                data.idioma = 'Inglés';
+            } else if (data.idioma === 'es') {
+                data.idioma = 'Español';
+
+            }
             if (contentType === 'video' || contentType === 'pdf') {
                 resultDiv.innerHTML = `
                 <h2 class="text-3xl font-bold">Transcripción:</h2>
@@ -132,8 +167,8 @@
                 <p>${data.ideas}</p>
                 <h2 class="text-3xl font-bold">Resumen:</h2>
                 <p>${data.resumen}</p>
-                <h2 class="text-3xl font-bold">Páginas:</h2>
-                <p>${data.pages}</p>
+                <h2 class="text-3xl font-bold">Idioma:</h2>
+                <p>${data.idioma}</p>
             `;
             }else{
                 resultDiv.innerHTML = `
@@ -156,6 +191,8 @@
                 <p>${data.resumen}</p>
                 <h2 class="text-3xl font-bold">Categoría:</h2>
                 <p>${data.category}</p>
+                <h2 class="text-3xl font-bold">Idioma:</h2>
+                <p>${data.idioma}</p>
             `;
             }
             

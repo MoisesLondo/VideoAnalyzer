@@ -18,6 +18,8 @@ load_dotenv()
 def videoText(request):
     try:
         video_file = request.FILES.get('file')
+        theme = request.data.get('theme')
+        resumeWeight = request.data.get('resumeWeight')
         if not video_file:
             return JsonResponse({'error': 'No se proporcionó ningún archivo'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -40,10 +42,16 @@ def videoText(request):
 
         transcripcion = whisper_test(audio_path)
         ideas_titulo = chat(f'Dame 3 ideas de títulos para la siguiente descripción: {transcripcion}. No me des introducción, solo las ideas')
-        resumen = chat(f'Hazme un resumen para la siguiente transcripción: {transcripcion}. No me des introducción, solo el resumen')
-
-        sentimiento = TextBlob(transcripcion).sentiment.polarity
-
+        
+        options = {
+            (True, True): f'Hazme un resumen de tamaño {resumeWeight} para la siguiente transcripción: {transcripcion}, el resumen tiene que estar ligado a la siguiente temática: {theme}. No me des introducción, solo el resumen.',
+            (True, False): f'Hazme un resumen de tamaño {resumeWeight} para la siguiente transcripción: {transcripcion}. No me des introducción, solo el resumen.',
+            (False, True): f'Hazme un resumen para la siguiente transcripción: {transcripcion}, el resumen tiene que estar ligado a la siguiente temática: {theme}. No me des introducción, solo el resumen.',
+            (False, False): f'Hazme un resumen para la siguiente transcripción: {transcripcion}. No me des introducción, solo el resumen'
+        }
+        option = options[(bool(resumeWeight), bool(theme))]
+        resumen = chat(option)
+        
         idioma = detect(transcripcion)
 
 
@@ -59,7 +67,6 @@ def videoText(request):
                 'fps': fps,
                 'tamano': tamano
             },
-            'sentimiento': sentimiento,
             'idioma': idioma
         }, status=status.HTTP_200_OK)
 
@@ -70,10 +77,11 @@ def videoText(request):
 def linkText(request):
     try:
         link = request.data.get('link')
+        theme = request.data.get('theme')
+        resumeWeight = request.data.get('resumeWeight')
         if not link:
             return JsonResponse({'error': 'No se proporcionó ningún enlace'}, status=status.HTTP_400_BAD_REQUEST)
         
-        path = 'C:/Users/ACUS/Desktop/Video-Test'
         temp_dir = tempfile.TemporaryDirectory()
         print(temp_dir.name)
             
@@ -83,7 +91,14 @@ def linkText(request):
         
         transcripcion = whisper_test(audio_path)
         ideas_titulo = chat(f'Dame 3 ideas de títulos para la siguiente descripción: {transcripcion}. No me des introducción, solo las ideas')
-        resumen = chat(f'Hazme un resumen para la siguiente transcripción: {transcripcion}. No me des introducción, solo el resumen')
+        options = {
+            (True, True): f'Hazme un resumen de tamaño {resumeWeight} para la siguiente transcripción: {transcripcion}, el resumen tiene que estar ligado a la siguiente temática: {theme}. No me des introducción, solo el resumen.',
+            (True, False): f'Hazme un resumen de tamaño {resumeWeight} para la siguiente transcripción: {transcripcion}. No me des introducción, solo el resumen.',
+            (False, True): f'Hazme un resumen para la siguiente transcripción: {transcripcion}, el resumen tiene que estar ligado a la siguiente temática: {theme}. No me des introducción, solo el resumen.',
+            (False, False): f'Hazme un resumen para la siguiente transcripción: {transcripcion}. No me des introducción, solo el resumen'
+        }
+        option = options[(bool(resumeWeight), bool(theme))]
+        resumen = chat(option)
         idioma = detect(transcripcion)
         return JsonResponse({
             'title': title,
@@ -94,7 +109,7 @@ def linkText(request):
             'resumen': resumen,
             'idioma': idioma,
             'thumbnail': thumbnail,
-            'category': category,
+            'category': category
         }, status=status.HTTP_200_OK)
 
     except Exception as e:
@@ -105,6 +120,9 @@ def linkText(request):
 def pdfText(request):
     try:
         pdf_file = request.FILES.get('file')
+        theme = request.data.get('theme')
+        resumeWeight = request.data.get('resumeWeight')
+        
         if not pdf_file:
             return JsonResponse({'error': 'No se proporcionó ningún archivo'}, status=status.HTTP_400_BAD_REQUEST)
         
@@ -122,7 +140,14 @@ def pdfText(request):
             text += pdf.pages[page].extract_text()
         
         ideas_titulo = chat(f'Dame 3 ideas de títulos para la siguiente descripción: {text}. No me des introducción, solo las ideas')
-        resumen = chat(f'Hazme un resumen para la siguiente transcripción: {text}. No me des introducción, solo el resumen')
+        options = {
+            (True, True): f'Hazme un resumen de tamaño {resumeWeight} para la siguiente descripción: {text}, el resumen tiene que estar ligado a la siguiente temática: {theme}. No me des introducción, solo el resumen.',
+            (True, False): f'Hazme un resumen de tamaño {resumeWeight} para la siguiente descripción: {text}. No me des introducción, solo el resumen.',
+            (False, True): f'Hazme un resumen para la siguiente descripción: {text}, el resumen tiene que estar ligado a la siguiente temática: {theme}. No me des introducción, solo el resumen.',
+            (False, False): f'Hazme un resumen para la siguiente descripción: {text}. No me des introducción, solo el resumen'
+        }
+        option = options[(bool(resumeWeight), bool(theme))]
+        resumen = chat(option)
         idioma = detect(text)
         
         os.unlink(temp_file_path)
@@ -142,7 +167,7 @@ def pdfText(request):
 
 
 def whisper_test(audio_path):
-    model = whisper.load_model("base")
+    model = whisper.load_model("small")
     result = model.transcribe(audio_path)
     print(result['text'])
     return result['text']
