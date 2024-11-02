@@ -14,6 +14,7 @@ colorama==0.4.6
 comtypes==1.4.8
 decorator==4.4.2
 distro==1.9.0
+dj-database-url==2.3.0
 Django==5.1.2
 django-cors-headers==4.5.0
 django-environ==0.11.2
@@ -24,9 +25,12 @@ frozenlist==1.4.1
 fsspec==2024.9.0
 greenlet==3.1.1
 groq==0.11.0
+gTTS==2.5.3
+gunicorn==23.0.0
 h11==0.14.0
 httpcore==1.0.6
 httpx==0.27.2
+huggingface-hub==0.26.1
 idna==3.10
 imageio==2.36.0
 imageio-ffmpeg==0.5.1
@@ -59,10 +63,15 @@ pillow==11.0.0
 proglog==0.1.10
 propcache==0.2.0
 psutil==6.1.0
+psycopg2-binary==2.9.10
 pycryptodomex==3.21.0
 pydantic==2.9.2
 pydantic_core==2.23.4
+PyPDF2==3.0.1
 pypiwin32==223
+python-dotenv==1.0.1
+pyttsx3==2.98
+pytubefix==8.1.1
 pywin32==308
 PyYAML==6.0.2
 regex==2024.9.11
@@ -85,6 +94,8 @@ tqdm==4.66.5
 typing_extensions==4.12.2
 tzdata==2024.2
 urllib3==2.2.3
+uvicorn==0.32.0
 websockets==13.1
+whitenoise==6.8.2
 yarl==1.15.5
 yt-dlp==2024.10.22
