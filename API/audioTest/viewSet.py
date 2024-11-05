@@ -5,11 +5,11 @@ from rest_framework import status
 from django.http import JsonResponse
 import moviepy.editor as mp
 import whisper
-from textblob import TextBlob
 from langdetect import detect
-from groq import Groq
 import yt_dlp
 import PyPDF2
+from langchain_ollama import OllamaLLM
+model = whisper.load_model("small")
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -167,22 +167,15 @@ def pdfText(request):
 
 
 def whisper_test(audio_path):
-    model = whisper.load_model("small")
     result = model.transcribe(audio_path)
     print(result['text'])
     return result['text']
 
 def chat(myprompt):
-    key = os.getenv('GROQ_KEY')
-    client = Groq(api_key=key)
-    completion = client.chat.completions.create(
-    model="llama3-8b-8192",
-    messages= [{
-            "role": "user",
-            "content": myprompt,
-        }],
-    )
-    return completion.choices[0].message.content
+    model = OllamaLLM(model="llama3.2")
+    result = model.invoke(input=f"{myprompt}")
+    print(result)
+    return result
 
 def downloadLink(url, output_path):
     ydl_opts = {
